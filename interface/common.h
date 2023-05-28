@@ -1,6 +1,8 @@
 #ifndef ALU_COMMON_H_
 #define ALU_COMMON_H_
 
+#include <string>
+
 #include "api.h"
 
 namespace alu {
