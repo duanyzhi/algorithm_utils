@@ -6,6 +6,8 @@
 namespace alu {
 namespace cv {
 
+void Get2DGaussianKernel(const int& kernel_size, double deviation = 1.0);
+
 void GaussianBlur();
 
 }  // namespace cv
