@@ -2,11 +2,12 @@
 #define ALU_CV_CORE_METHODS_H_
 
 #include "interface/common.h"
+#include "core/tensor.h"
 
 namespace alu {
 namespace cv {
 
-void Get2DGaussianKernel(const int& kernel_size, double deviation = 1.0);
+Tensor Get2DGaussianKernel(const int& kernel_size, double deviation = 1.0);
 
 void GaussianBlur();
 
