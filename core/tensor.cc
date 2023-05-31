@@ -18,23 +18,23 @@ void aligned_free(void* data_ptr) {
   }
 }
 
-template <typename _Tp, size_t N>
-DataStorage<_Tp, N>::DataStorage()
+template <typename _Tp>
+DataStorage<_Tp>::DataStorage(size_t N)
     : TensorBuffer(TypedAllocator::Allocate<_Tp>(N)),
       elem_(N) {}
 
-template <typename _Tp, size_t N>
-DataStorage<_Tp, N>::~DataStorage() {
+template <typename _Tp>
+DataStorage<_Tp>::~DataStorage() {
   if (data()) {
     TypedAllocator::Deallocate<_Tp>(static_cast<_Tp*>(data()));
   }
 }
 
-Tensor::Tensor(const int& width, const int& height, int type) {
+Tensor::Tensor(const int& width, const int& height, AluType type) {
   const size_t capacity = width * height;
 #define __ALU_ALLOCATOR_CASE(ALLOCATORTYPE, _TP) \
   case (ALLOCATORTYPE): {                        \
-    buffer_ = new DataStorage<_TP, capacity>();   \
+    buffer_ = new DataStorage<_TP>(capacity);   \
     break;                                       \
   }
 
@@ -46,6 +46,13 @@ Tensor::Tensor(const int& width, const int& height, int type) {
     }
   }
 #undef __ALU_ALLOCATOR_CASE
+  info_.width = width;
+  info_.height = height;
+  info_.type = type;
+}
+
+Tensor::~Tensor() {
+  delete buffer_;
 }
 
 }  // namespace alu

@@ -18,13 +18,22 @@ include_directories(interface)
 set(alu_interface
   "interface/api.h"
   "interface/common.h"
+  "interface/alu.h"
 )
 
 set(alu_srcs
   "core/tensor.h"
   "core/tensor.cc"
+  "core/alu_test.cc"
 
   "common/common.cc"
+  "common/logging.h"
+
+  "arithmetic/mathematic.h"
+  "arithmetic/mathematic.cc"
+
+  "cv/core/methods.h"
+  "cv/core/methods.cc"
 )
 
 set(alulibs alu)
@@ -46,4 +55,4 @@ set_target_properties(${alulibs}
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
 )
 
-
+add_subdirectory(test)

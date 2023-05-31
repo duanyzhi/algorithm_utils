@@ -16,9 +16,9 @@ struct TensorBuffer {
   void* const data_;
 };
 
-template <typename _Tp, size_t N>
+template <typename _Tp>
 struct DataStorage : public TensorBuffer {
-  DataStorage();
+  DataStorage(size_t N);
   ~DataStorage();
   typedef _Tp value_type;
   typedef _Tp* pointer;
@@ -43,20 +43,32 @@ class TypedAllocator {
   }
 };
 
-enum AluType {
+enum class AluType {
   AINT = 0,
-  AFLOAT = 1
+  AFLOAT = 1,
+  ADOUBLE = 2
 };
 
-#define _ALUTYPE_MAP(_)         \
+#define _ALUTYPE_MAP(_)             \
   _(alu::AluType::AINT, int)        \
-  _(alu::AluType::AFLOAT, float)
+  _(alu::AluType::AFLOAT, float)    \
+  _(alu::AluType::ADOUBLE, double)
+
+struct TensorInfo {
+  int width;
+  int height; 
+  AluType type;
+};
 
 class Tensor {
  public:
-  Tensor(const int& width, const int& height, int type);
-  
+  Tensor(const int& width, const int& height, AluType type);
+  ~Tensor();
+  const TensorBuffer* GetTensorBuffer() const { return buffer_; }
+  const TensorInfo info() const { return info_; }
+
  private:
+  TensorInfo  info_;
   TensorBuffer* buffer_;  
 };
 
