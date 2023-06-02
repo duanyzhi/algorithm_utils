@@ -9,7 +9,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -save-temps")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -24,6 +24,7 @@ set(alu_interface
 set(alu_srcs
   "core/tensor.h"
   "core/tensor.cc"
+  "core/tensor_impl.cc"
   "core/alu_test.cc"
 
   "common/common.cc"

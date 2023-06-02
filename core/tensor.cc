@@ -4,13 +4,12 @@
 
 namespace alu {
 
-inline void* aligned_malloc(size_t size, size_t alignment) {
+inline void* aligned_malloc(size_t size_bytes, size_t alignment) {
   void* memptr = nullptr; 
-  const bool state = posix_memalign(&memptr,  alignment, size);
+  const bool state = posix_memalign(&memptr,  alignment, size_bytes);
   const bool null_mem = state || (nullptr == memptr);
   return memptr;
 }
-
 
 void aligned_free(void* data_ptr) {
   if (data_ptr) {
@@ -18,23 +17,41 @@ void aligned_free(void* data_ptr) {
   }
 }
 
-template <typename _Tp>
-DataStorage<_Tp>::DataStorage(size_t N)
-    : TensorBuffer(TypedAllocator::Allocate<_Tp>(N)),
-      elem_(N) {}
+template <>
+struct alutype_traits<AluType::ABOOL> {
+  // typedef AluType::ABOOL value;
+  using type = bool; 
+};
 
-template <typename _Tp>
-DataStorage<_Tp>::~DataStorage() {
-  if (data()) {
-    TypedAllocator::Deallocate<_Tp>(static_cast<_Tp*>(data()));
-  }
-}
+template <>
+struct alutype_traits<AluType::AINT> {
+  // using value = AluType::AINT;
+  using type = int; 
+};
+
+template <>
+struct alutype_traits<AluType::ALINT> {
+  // using value = AluType::ALINT;
+  using type = int64_t; 
+};
+
+template <>
+struct alutype_traits<AluType::AFLOAT> {
+  // using value = AluType::AFLOAT;
+  using type = float; 
+};
+
+template <>
+struct alutype_traits<AluType::ADOUBLE> {
+  // using value = AluType::ADOUBLE;
+  using type = double; 
+};
 
 Tensor::Tensor(const int& width, const int& height, AluType type) {
   const size_t capacity = width * height;
-#define __ALU_ALLOCATOR_CASE(ALLOCATORTYPE, _TP) \
+#define __ALU_ALLOCATOR_CASE(ALLOCATORTYPE, _TP, _) \
   case (ALLOCATORTYPE): {                        \
-    buffer_ = new DataStorage<_TP>(capacity);   \
+    impl_ = new TensorBase<ALLOCATORTYPE>(width, height);   \
     break;                                       \
   }
 
@@ -46,13 +63,22 @@ Tensor::Tensor(const int& width, const int& height, AluType type) {
     }
   }
 #undef __ALU_ALLOCATOR_CASE
-  info_.width = width;
-  info_.height = height;
-  info_.type = type;
 }
 
 Tensor::~Tensor() {
-  delete buffer_;
+  delete impl_;
 }
 
+const TensorInfo Tensor::info() const {
+  return impl_->info();
+}
+
+const Tensor& Tensor::fill(const Scalar& value) const {
+  impl_->fill(value);
+  return *this;
+}
+
+void* Tensor::data() const {
+  return impl_->data_ptr();
+}
 }  // namespace alu
