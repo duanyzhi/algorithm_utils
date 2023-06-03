@@ -7,6 +7,22 @@
 
 namespace alu {
 
+struct ALU_API rect {
+  rect() {}
+  rect(const int xx, const int yy, const int ww, const int hh) :
+    x(xx), y(yy), w(ww), h(hh), empty_(true) {};
+  int x;
+  int y;
+  int w;
+  int h;
+
+  bool empty() const {
+    return empty_;
+  }
+ private:
+  bool empty_ = true;
+};
+
 class ALU_API Status {
  public:
   Status() {}

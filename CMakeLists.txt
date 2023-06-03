@@ -32,6 +32,10 @@ set(alu_srcs
 
   "arithmetic/mathematic.h"
   "arithmetic/mathematic.cc"
+  "arithmetic/dl_utils.h"
+  "arithmetic/dl_utils.cc"
+  "arithmetic/convolution.h"
+  "arithmetic/convolution.cc"
 
   "cv/core/methods.h"
   "cv/core/methods.cc"
