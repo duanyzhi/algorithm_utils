@@ -6,6 +6,7 @@ namespace alu {
 
 inline void* aligned_malloc(size_t size_bytes, size_t alignment) {
   void* memptr = nullptr; 
+  std::cout << "???" << size_bytes << " ";
   const bool state = posix_memalign(&memptr,  alignment, size_bytes);
   const bool null_mem = state || (nullptr == memptr);
   return memptr;
@@ -51,6 +52,7 @@ Tensor::Tensor(const int& width, const int& height, AluType type) {
   const size_t capacity = width * height;
 #define __ALU_ALLOCATOR_CASE(ALLOCATORTYPE, _TP, _) \
   case (ALLOCATORTYPE): {                        \
+    std::cout << "alu type: " << ALLOCATORTYPE << " " << sizeof(_TP) << " \n"; \
     impl_ = new TensorBase<ALLOCATORTYPE>(width, height);   \
     break;                                       \
   }
@@ -78,7 +80,33 @@ const Tensor& Tensor::fill(const Scalar& value) const {
   return *this;
 }
 
+const Tensor& Tensor::set(const int& index, const Scalar &value) const {
+  impl_->set(index, value);
+  return *this;
+}
+
 void* Tensor::data() const {
   return impl_->data_ptr();
 }
+
+Scalar Tensor::operator[](int index) const {
+  // int index = w * info().width + h; 
+  return impl_->data(index);
+}
+
+std::ostream& operator<<(std::ostream& os, const Scalar& s) {
+  if (s.type() == AluType::ABOOL) {
+    os << s.to<bool>();
+  } else {
+    os << s.to<double>();
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const AluType& type) {
+  if (type == AluType::ABOOL) os << "bool";
+  if (type == AluType::ADOUBLE) os << "double";
+  return os;
+}
+
 }  // namespace alu
