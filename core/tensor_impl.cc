@@ -4,7 +4,6 @@ namespace alu {
 
 TensorImpl::TensorImpl(TensorBuffer* buffer, int width, int height, AluType type)
   : buffer_(buffer) {
-  std::cout << "impl construct " << width << " " << height << "\n";
   info_.width = width;
   info_.height = height;
   info_.numel = width * height;

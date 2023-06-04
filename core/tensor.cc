@@ -6,9 +6,9 @@ namespace alu {
 
 inline void* aligned_malloc(size_t size_bytes, size_t alignment) {
   void* memptr = nullptr; 
-  std::cout << "???" << size_bytes << " ";
   const bool state = posix_memalign(&memptr,  alignment, size_bytes);
   const bool null_mem = state || (nullptr == memptr);
+  assert(null_mem == false);
   return memptr;
 }
 
@@ -52,7 +52,6 @@ Tensor::Tensor(const int& width, const int& height, AluType type) {
   const size_t capacity = width * height;
 #define __ALU_ALLOCATOR_CASE(ALLOCATORTYPE, _TP, _) \
   case (ALLOCATORTYPE): {                        \
-    std::cout << "alu type: " << ALLOCATORTYPE << " " << sizeof(_TP) << " \n"; \
     impl_ = new TensorBase<ALLOCATORTYPE>(width, height);   \
     break;                                       \
   }

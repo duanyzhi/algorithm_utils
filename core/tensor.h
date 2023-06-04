@@ -8,11 +8,13 @@
 
 namespace alu {
 
-void *aligned_malloc(size_t size_bytes, size_t alignment = 16);
+void *aligned_malloc(size_t size_bytes, size_t alignment = 8);
 void aligned_free(void *data_ptr);
 
 struct TensorBuffer {
   TensorBuffer(void *data_ptr) : data_(data_ptr) {}
+  // TensorBuffer deconstruct must be virtual for auto call DataStorage deconstruct when doing delete.
+  virtual ~TensorBuffer() {}
   void *data() const { return data_; }
 
 private:
@@ -22,7 +24,6 @@ private:
 class TypedAllocator {
 public:
   template <typename T> static T *Allocate(size_t num_elements) {
-    std::cout << "num elements " << num_elements << " " << sizeof(T);
     void *p = aligned_malloc(num_elements * sizeof(T));
     T *data_ptr = reinterpret_cast<T *>(p);
     return data_ptr;
@@ -39,7 +40,7 @@ template <typename _Tp> struct DataStorage : public TensorBuffer {
   ~DataStorage();
   typedef _Tp value_type;
   typedef _Tp *pointer;
-  pointer data;
+  pointer data_pointer;
 
 private:
   size_t elem_;
@@ -47,7 +48,8 @@ private:
 
 template <typename _Tp>
 DataStorage<_Tp>::DataStorage(size_t N)
-    : TensorBuffer(TypedAllocator::Allocate<_Tp>(N)), elem_(N) {}
+    : TensorBuffer(TypedAllocator::Allocate<_Tp>(N)), elem_(N) {
+}
 
 template <typename _Tp> DataStorage<_Tp>::~DataStorage() {
   if (data()) {
@@ -216,7 +218,6 @@ public:
   TensorBase(int width, int height)
       : TensorImpl(new DataStorage<scalar_type>(width * height), width,
                    height, _AluTp) {
-     std::cout << "construct for tensor base " << width << " " << height << " " << sizeof(scalar_type) << " \n";
    }
 
   ~TensorBase(){};
@@ -253,6 +254,7 @@ Scalar TensorBase<_AluType>::data(int index) {
 class Tensor {
 public:
   Tensor(const int &width, const int &height, AluType type);
+  Tensor(const int &width, const int &height) : Tensor(width, height, AluType::ADOUBLE) {};
   ~Tensor();
   // const TensorBuffer* GetTensorBuffer() const;
   const TensorInfo info() const;

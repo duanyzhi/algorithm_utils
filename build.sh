@@ -1,6 +1,6 @@
-# mkdir build
+mkdir build
 cd build
 cmake ..
 make
 
-./bin/alu_demo
+valgrind --track-origins=yes --leak-check=yes ./bin/alu_demo
