@@ -274,6 +274,8 @@ private:
   TensorImpl *impl_;
 };
 
+std::ostream& operator<<(std::ostream& os, const Tensor& t);
+
 } // namespace alu
 
 #endif // ALU_CORE_TENSOR_H_

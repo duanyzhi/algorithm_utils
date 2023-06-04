@@ -1,4 +1,5 @@
 #include "interface/common.h"
+#include <sstream>
 
 namespace alu {
 
@@ -11,4 +12,12 @@ std::string Status::tostring() const {
   return "OK";
 }
 
-}  // namespace Alu
+std::ostream &operator<<(std::ostream &os, const rect &t) {
+  std::stringstream ss;
+  ss << "[x, y, w, h]: " << t.x << ", " << t.y << ", " << t.w << ", " << t.h
+     << ".\n";
+  os << ss.str();
+  return os;
+}
+
+} // namespace alu
