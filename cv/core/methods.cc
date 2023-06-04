@@ -9,11 +9,10 @@ Tensor Get2DGaussianKernel(const int& kernel_size, double deviation) {
   Tensor kernel_tensor(kernel_size, kernel_size, alu::AluType::ADOUBLE);
   double* data_ptr = static_cast<double*>(kernel_tensor.data());
   int range = kernel_size / 2;
-  for (int x = -range; x < range + 1; x++) {
-    for (int y = -range; y < range + 1; y++) {
-      auto value = alu::math::GaussianDistribution2D(x, y, deviation);
-      // LOG(value);
-      *data_ptr = value;
+  int cc = kernel_size % 2 == 0 ? 0 : 1;
+  for (int x = -range; x < range + cc; x++) {
+    for (int y = -range; y < range + cc; y++) {
+      *data_ptr = alu::math::GaussianDistribution2D(x, y, deviation);
       data_ptr++;
     }
   }

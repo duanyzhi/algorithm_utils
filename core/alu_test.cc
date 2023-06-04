@@ -10,6 +10,9 @@ void test_alu() {
   int kernel_size = 3;
   auto kernel_tensor = alu::cv::Get2DGaussianKernel(kernel_size);
 
+  {
+    Tensor aa(3, 3);
+  }
   double* data_ptr = static_cast<double*>(kernel_tensor.data()); 
 
   for (int i = 0; i < 9; i++) {
@@ -27,9 +30,10 @@ void test_alu() {
   // }
   std::cout << "\n";
 
-  auto input = alu::cv::Get2DGaussianKernel(5);
-  std::cout << "intput tensor typoe "<< input.dtype() << "\n";
-  auto output = alu::Convolution2D(input, kernel_tensor);
+  {
+    auto input = alu::cv::Get2DGaussianKernel(10);
+    auto output = alu::Convolution2D(input, kernel_tensor);
+  }
 }
 
 }
