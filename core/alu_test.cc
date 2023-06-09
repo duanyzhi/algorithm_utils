@@ -1,5 +1,6 @@
 #include "alu.h"
 #include "arithmetic/convolution.h"
+#include "common/utils.h"
 #include "core/tensor.h"
 #include "cv/core/methods.h"
 #include <iostream>
@@ -30,10 +31,18 @@ void test_alu() {
 
   {
     auto input = alu::cv::Get2DGaussianKernel(10);
+    alu::rect roi(0, 0, 3, 3);
+    std::cout << "roi test " << input(roi);
     auto output = alu::Convolution2D(input, kernel_tensor);
     std::cout << input;
     std::cout << kernel_tensor;
     std::cout << output;
+  }
+  {
+    auto input = alu::load("/workspace/algorithm_utils/data/im.png");
+    std::cout << "input: " << input;
+    auto output = alu::cv::CannyEdgeDetection(input);
+    alu::save_image(output, "/workspace/algorithm_utils/data/output.png");
   }
 }
 

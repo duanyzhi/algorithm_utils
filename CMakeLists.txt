@@ -13,6 +13,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -save-temps")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+message("OpenCV_DIR:" ${OpenCV_DIR})
+
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 include_directories(interface)
 
 set(alu_interface
@@ -29,6 +33,8 @@ set(alu_srcs
 
   "common/common.cc"
   "common/logging.h"
+  "common/utils.h"
+  "common/utils.cc"
 
   "arithmetic/mathematic.h"
   "arithmetic/mathematic.cc"
@@ -39,6 +45,7 @@ set(alu_srcs
 
   "cv/core/methods.h"
   "cv/core/methods.cc"
+  "cv/core/canny.cc"
 )
 
 set(alulibs alu)
@@ -47,6 +54,7 @@ add_library(${alulibs}
         ${alu_interface}
         ${alu_srcs}
 )
+
 
 set(PROJECT_VERSION 0.1.0)
 

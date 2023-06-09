@@ -17,9 +17,10 @@ Scalar Convolution2DWithRoi(const Tensor &input, const Tensor &weight,
   Scalar output(double(0.0));
   for (int x = roi.x; x < roi.x + roi.w; x++) {
     for (int y = roi.y; y < roi.y + roi.h; y++) {
-      int index = x * input.info().width + y;
-      int w_index = (x - roi.x) * roi.w + (y - roi.y);
-      output = output + input[index] * weight[w_index];
+      output = output + input.data(y, x) * weight.data(y - roi.y, x - roi.x);
+      // std::cout << "(y, x, in, w)" << y << " " << x << " " << input.data(y,
+      // x)
+      //          << " " << weight.data(y - roi.y, x - roi.x) << "; ";
     }
   }
   return output;
@@ -40,7 +41,7 @@ Tensor Convolution2D(const Tensor &input, const Tensor &weight) {
       alu::rect roi(iw - sw, ih - sh, weight.info().width,
                     weight.info().height);
       auto scalar_out = Convolution2DWithRoi(input, weight, roi);
-      int index = (iw - sw) * ow + (ih - sh);
+      int index = (ih - sh) * ow + (iw - sw);
       output.set(index, scalar_out);
     }
   }

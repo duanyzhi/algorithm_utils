@@ -21,26 +21,31 @@ void aligned_free(void *data_ptr) {
 
 template <> struct alutype_traits<AluType::ABOOL> {
   // typedef AluType::ABOOL value;
+  static constexpr size_t bytes = 1;
   using type = bool;
 };
 
 template <> struct alutype_traits<AluType::AINT> {
   // using value = AluType::AINT;
+  static constexpr size_t bytes = 4;
   using type = int;
 };
 
 template <> struct alutype_traits<AluType::ALINT> {
   // using value = AluType::ALINT;
+  static constexpr size_t bytes = 8;
   using type = int64_t;
 };
 
 template <> struct alutype_traits<AluType::AFLOAT> {
   // using value = AluType::AFLOAT;
+  static constexpr size_t bytes = 4;
   using type = float;
 };
 
 template <> struct alutype_traits<AluType::ADOUBLE> {
   // using value = AluType::ADOUBLE;
+  static constexpr size_t bytes = 8;
   using type = double;
 };
 
@@ -76,11 +81,64 @@ const Tensor &Tensor::set(const int &index, const Scalar &value) const {
   return *this;
 }
 
+const Tensor &Tensor::set(int row, int col, const Scalar &value) const {
+  int index = row * info().width + col;
+  impl_->set(index, value);
+  return *this;
+}
+
 void *Tensor::data() const { return impl_->data_ptr(); }
 
-Scalar Tensor::operator[](int index) const {
-  // int index = w * info().width + h;
+const Tensor Tensor::mul(const Tensor &other) {
+  assert(info().type == other.dtype());
+  Tensor output(info().width, info().height, info().type);
+  impl_->mul(other.data(), output.data());
+  return output;
+}
+
+Scalar Tensor::operator[](int index) const { return impl_->data(index); }
+
+Scalar Tensor::data(int row, int col) const {
+  assert(row < info().height);
+  assert(col < info().width);
+  int index = row * info().width + col;
   return impl_->data(index);
+}
+
+Tensor Tensor::operator+(const Tensor &other) const {
+  assert(info().type == other.dtype());
+  Tensor output(info());
+  impl_->add(other.data(), output.data());
+  return output;
+}
+
+Tensor Tensor::operator/(const double value) const {
+  Tensor output(info());
+  impl_->div(value, output.data());
+  return output;
+}
+
+Tensor Tensor::operator*(const double value) const {
+  Tensor output(info());
+  impl_->mul(value, output.data());
+  return output;
+}
+
+Tensor Tensor::operator()(const alu::rect &roi) const {
+  Tensor output(roi.w, roi.h, this->dtype());
+  impl_->roi(roi, output.data());
+  return output;
+}
+
+// Tensor &Tensor::operator=(const Tensor &other) {
+//  this->impl_ = other.impl();
+//  return *this;
+//}
+
+Tensor Tensor::abs() {
+  Tensor output(info());
+  impl_->abs(output.data());
+  return output;
 }
 
 std::ostream &operator<<(std::ostream &os, const Scalar &s) {
@@ -102,16 +160,21 @@ std::ostream &operator<<(std::ostream &os, const AluType &type) {
 
 std::ostream &operator<<(std::ostream &os, const Tensor &t) {
   std::stringstream ss;
-  ss << "Tensor info: [" << t.info().width << ", " << t.info().height << "]\n";
-  for (int w = 0; w < t.info().width; w++) {
-    for (int h = 0; h < t.info().height; h++) {
-      ss << t[w * t.info().width + h] << " ";
+  ss << "Tensor info: [" << t.info().width << ", " << t.info().height << ", "
+     << t.info().type << "]\n";
+  for (int h = 0; h < t.info().height; h++) {
+    for (int w = 0; w < t.info().width; w++) {
+      ss << t[h * t.info().width + w] << " ";
     }
     ss << "\n";
   }
   ss << "\n";
   os << ss.str();
   return os;
+}
+
+Scalar max(const Scalar &lhs, const Scalar &rhs) {
+  return lhs > rhs ? lhs : rhs;
 }
 
 } // namespace alu

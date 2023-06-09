@@ -2,9 +2,11 @@
 #define ALU_CORE_TENSOR_H_
 
 #include <cassert>
-#include <stdlib.h>
 #include <iostream>
+#include <stdlib.h>
 #include <type_traits>
+
+#include "interface/common.h"
 
 namespace alu {
 
@@ -13,7 +15,8 @@ void aligned_free(void *data_ptr);
 
 struct TensorBuffer {
   TensorBuffer(void *data_ptr) : data_(data_ptr) {}
-  // TensorBuffer deconstruct must be virtual for auto call DataStorage deconstruct when doing delete.
+  // TensorBuffer deconstruct must be virtual for auto call DataStorage
+  // deconstruct when doing delete.
   virtual ~TensorBuffer() {}
   void *data() const { return data_; }
 
@@ -48,8 +51,7 @@ private:
 
 template <typename _Tp>
 DataStorage<_Tp>::DataStorage(size_t N)
-    : TensorBuffer(TypedAllocator::Allocate<_Tp>(N)), elem_(N) {
-}
+    : TensorBuffer(TypedAllocator::Allocate<_Tp>(N)), elem_(N) {}
 
 template <typename _Tp> DataStorage<_Tp>::~DataStorage() {
   if (data()) {
@@ -65,7 +67,7 @@ enum class AluType : int8_t {
   ADOUBLE = 4
 };
 
-std::ostream& operator<<(std::ostream& os, const AluType& type);
+std::ostream &operator<<(std::ostream &os, const AluType &type);
 
 #define _ALUTYPE_MAP(_)                                                        \
   _(alu::AluType::ABOOL, bool, Bool)                                           \
@@ -145,11 +147,11 @@ private:
 _ALUTYPE_MAP(DEFINE_TO)
 #undef DEFINE_TO
 
-std::ostream& operator<<(std::ostream& os, const Scalar& s);
+std::ostream &operator<<(std::ostream &os, const Scalar &s);
 
-static inline Scalar operator+(const Scalar& lhs, const Scalar& rhs) {
+static inline Scalar operator+(const Scalar &lhs, const Scalar &rhs) {
   if (lhs.type() == AluType::ABOOL || rhs.type() == AluType::ABOOL) {
-    return lhs;  
+    return lhs;
   }
   if (lhs.type() == AluType::ALINT) {
     auto v = lhs.to<int64_t>() + rhs.to<int64_t>();
@@ -161,7 +163,7 @@ static inline Scalar operator+(const Scalar& lhs, const Scalar& rhs) {
   return Scalar();
 }
 
-static inline Scalar operator*(const Scalar& lhs, const Scalar& rhs) {
+static inline Scalar operator*(const Scalar &lhs, const Scalar &rhs) {
   assert(lhs.type() != AluType::ABOOL && rhs.type() != AluType::ABOOL);
   if (lhs.type() == AluType::ALINT) {
     auto v = lhs.to<int64_t>() * rhs.to<int64_t>();
@@ -173,11 +175,62 @@ static inline Scalar operator*(const Scalar& lhs, const Scalar& rhs) {
   return Scalar();
 }
 
+static inline bool operator>(const Scalar &lhs, const Scalar &rhs) {
+  assert(lhs.type() != AluType::ABOOL && rhs.type() != AluType::ABOOL);
+  if (lhs.type() == AluType::ALINT) {
+    return lhs.to<int64_t>() > rhs.to<int64_t>();
+  } else if (lhs.type() == AluType::ADOUBLE) {
+    return lhs.to<double>() > rhs.to<double>();
+  } else {
+    assert(false);
+  }
+  return false;
+}
+
+static inline bool operator>=(const Scalar &lhs, const Scalar &rhs) {
+  assert(lhs.type() != AluType::ABOOL && rhs.type() != AluType::ABOOL);
+  if (lhs.type() == AluType::ALINT) {
+    return lhs.to<int64_t>() >= rhs.to<int64_t>();
+  } else if (lhs.type() == AluType::ADOUBLE) {
+    return lhs.to<double>() >= rhs.to<double>();
+  } else {
+    assert(false);
+  }
+  return false;
+}
+
+static inline bool operator<(const Scalar &lhs, const Scalar &rhs) {
+  assert(lhs.type() != AluType::ABOOL && rhs.type() != AluType::ABOOL);
+  if (lhs.type() == AluType::ALINT) {
+    return lhs.to<int64_t>() < rhs.to<int64_t>();
+  } else if (lhs.type() == AluType::ADOUBLE) {
+    return lhs.to<double>() < rhs.to<double>();
+  } else {
+    assert(false);
+  }
+  return false;
+}
+
+static inline bool operator<=(const Scalar &lhs, const Scalar &rhs) {
+  assert(lhs.type() != AluType::ABOOL && rhs.type() != AluType::ABOOL);
+  if (lhs.type() == AluType::ALINT) {
+    return lhs.to<int64_t>() <= rhs.to<int64_t>();
+  } else if (lhs.type() == AluType::ADOUBLE) {
+    return lhs.to<double>() <= rhs.to<double>();
+  } else {
+    assert(false);
+  }
+  return false;
+}
+
+Scalar max(const Scalar &lhs, const Scalar &rhs);
+
 struct TensorInfo {
-  int width;
-  int height;
-  size_t numel;
-  AluType type;
+  int width = -1;
+  int height = -1;
+  size_t numel = -1;
+  size_t size_bytes = -1;
+  AluType type = AluType::ADOUBLE;
 };
 
 template <AluType _Tp> struct alutype_traits {};
@@ -190,16 +243,24 @@ template <AluType _Tp> struct scalar_traits {
 
 class TensorImpl {
 public:
-  TensorImpl(TensorBuffer *buffer, int width, int height, AluType type);
-  ~TensorImpl();
+  TensorImpl(TensorBuffer *buffer, int width, int height, AluType type,
+             size_t size_bytes);
 
+  ~TensorImpl();
   virtual void fill(const Scalar &value) = 0;
 
-  virtual void set(const int& index, const Scalar &value) = 0;
+  virtual void set(const int &index, const Scalar &value) noexcept = 0;
+  virtual void add(const void *other, const void *output) = 0;
+  virtual void mul(const void *other, const void *output) = 0;
+  virtual void mul(const double value, const void *output) = 0;
+  virtual void div(const double value, const void *output) = 0;
+  virtual void roi(const alu::rect &roi, const void *output) = 0;
+  virtual void abs(const void *output) = 0;
 
   void *data_ptr() const;
 
   size_t numel() const { return info_.numel; }
+  size_t numel_bytes() const { return info_.numel * info_.size_bytes; }
 
   const TensorInfo info() const { return info_; }
 
@@ -212,17 +273,23 @@ private:
 
 template <AluType _AluTp> class TensorBase : public TensorImpl {
 public:
+  typedef typename scalar_traits<_AluTp>::traits traits;
   typedef typename scalar_traits<_AluTp>::value_type scalar_type;
   typedef typename scalar_traits<_AluTp>::pointer pointer;
 
   TensorBase(int width, int height)
-      : TensorImpl(new DataStorage<scalar_type>(width * height), width,
-                   height, _AluTp) {
-   }
+      : TensorImpl(new DataStorage<scalar_type>(width * height), width, height,
+                   _AluTp, traits::bytes) {}
 
   ~TensorBase(){};
   void fill(const Scalar &value) override;
-  void set(const int& index, const Scalar &value) override;
+  void set(const int &index, const Scalar &value) noexcept override;
+  void add(const void *other, const void *output) override;
+  void mul(const void *other, const void *output) override;
+  void mul(const double value, const void *output) override;
+  void div(const double value, const void *output) override;
+  void roi(const alu::rect &roi, const void *output) override;
+  void abs(const void *output) override;
   Scalar data(int index) override;
 };
 
@@ -237,44 +304,123 @@ void TensorBase<_AluType>::fill(const Scalar &value) {
 }
 
 template <AluType _AluType>
-void TensorBase<_AluType>::set(const int& index, const Scalar &value) {
+void TensorBase<_AluType>::roi(const alu::rect &roi, const void *output) {
+  pointer buffer = static_cast<pointer>(data_ptr());
+  pointer output_buffer = static_cast<pointer>((void *)output);
+  int number = 0;
+  for (auto y = 0; y < roi.h; ++y) {
+    for (auto x = 0; x < roi.w; ++x) {
+      auto index = y * info().width + x;
+      *(output_buffer + number) = static_cast<scalar_type>(*(buffer + index));
+      ++number;
+    }
+  }
+}
+
+template <AluType _AluType>
+void TensorBase<_AluType>::set(const int &index, const Scalar &value) noexcept {
   pointer buffer = static_cast<pointer>(data_ptr());
   scalar_type data = value.to<scalar_type>();
   *(buffer + index) = data;
 }
 
-template <AluType _AluType>
-Scalar TensorBase<_AluType>::data(int index) {
+template <AluType _AluType> Scalar TensorBase<_AluType>::data(int index) {
   pointer buffer = static_cast<pointer>(data_ptr());
   auto value = static_cast<scalar_type>(*(buffer + index));
   Scalar s(value);
   return s;
 }
 
+template <AluType _Alutype>
+void TensorBase<_Alutype>::mul(const void *other, const void *output) {
+  pointer src_buffer = static_cast<pointer>(data_ptr());
+  pointer other_buffer = static_cast<pointer>((void *)other);
+  pointer output_buffer = static_cast<pointer>((void *)output);
+  for (int i = 0; i < numel(); i++) {
+    *(output_buffer + i) = static_cast<scalar_type>(*(src_buffer + i)) *
+                           static_cast<scalar_type>(*(other_buffer + i));
+  }
+}
+
+template <AluType _Alutype>
+void TensorBase<_Alutype>::mul(const double value, const void *output) {
+  pointer src_buffer = static_cast<pointer>(data_ptr());
+  pointer output_buffer = static_cast<pointer>((void *)output);
+  for (int i = 0; i < numel(); i++) {
+    *(output_buffer + i) = static_cast<scalar_type>(*(src_buffer + i)) * value;
+  }
+}
+
+template <AluType _AluType>
+void TensorBase<_AluType>::div(const double value, const void *output) {
+  pointer src_buffer = static_cast<pointer>(data_ptr());
+  pointer output_buffer = static_cast<pointer>((void *)output);
+  for (int i = 0; i < numel(); i++) {
+    *(output_buffer + i) = static_cast<scalar_type>(*(src_buffer + i)) / value;
+  }
+}
+
+template <AluType _AluType>
+void TensorBase<_AluType>::add(const void *other, const void *output) {
+  pointer src_buffer = static_cast<pointer>(data_ptr());
+  pointer other_buffer = static_cast<pointer>((void *)other);
+  pointer output_buffer = static_cast<pointer>((void *)output);
+  for (int i = 0; i < numel(); i++) {
+    *(output_buffer + i) = static_cast<scalar_type>(*(src_buffer + i)) +
+                           static_cast<scalar_type>(*(other_buffer + i));
+  }
+}
+
+template <AluType _AluType> void TensorBase<_AluType>::abs(const void *output) {
+  pointer src_buffer = static_cast<pointer>(data_ptr());
+  pointer output_buffer = static_cast<pointer>((void *)output);
+  for (int i = 0; i < numel(); i++) {
+    auto v = static_cast<scalar_type>(*(src_buffer + i));
+    *(output_buffer + i) = v < 0 ? -1 * v : v;
+  }
+}
+
 class Tensor {
 public:
+  Tensor() = default;
   Tensor(const int &width, const int &height, AluType type);
-  Tensor(const int &width, const int &height) : Tensor(width, height, AluType::ADOUBLE) {};
+  Tensor(const TensorInfo &info) : Tensor(info.width, info.height, info.type){};
+  Tensor(const int &width, const int &height)
+      : Tensor(width, height, AluType::ADOUBLE){};
   ~Tensor();
+  Tensor &operator=(const Tensor &rhs);
   // const TensorBuffer* GetTensorBuffer() const;
   const TensorInfo info() const;
   const Tensor &fill(const Scalar &value) const;
-  const Tensor &set(const int& index, const Scalar &value) const;
-
+  const Tensor &set(const int &index, const Scalar &value) const;
+  const Tensor &set(int row, int col, const Scalar &value) const;
+  const Tensor mul(const Tensor &other);
+  Tensor abs();
   void *data() const;
 
-  // common index = w_index * width + h_index;
-  Scalar operator[](int index) const;
+  Scalar data(int row, int col) const;
 
-  AluType dtype() const {
-    return info().type;
-  }
+  Scalar operator[](int index) const;
+  Tensor operator+(const Tensor &other) const;
+  Tensor operator/(const double value) const;
+  Tensor operator*(const double value) const;
+  Tensor operator()(const alu::rect &roi) const;
+
+  AluType dtype() const { return info().type; }
+  bool empty() const { return nullptr == impl_; }
+  TensorImpl *impl() const { return impl_; }
 
 private:
-  TensorImpl *impl_;
+  Tensor(TensorImpl *impl) : impl_(impl) {}
+
+private:
+  TensorImpl *impl_ = nullptr;
 };
 
-std::ostream& operator<<(std::ostream& os, const Tensor& t);
+std::ostream &operator<<(std::ostream &os, const Tensor &t);
+
+Tensor arctan(const Tensor &a, const Tensor &b);
+Tensor sqrt(const Tensor &input);
 
 } // namespace alu
 
