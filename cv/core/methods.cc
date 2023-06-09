@@ -5,9 +5,9 @@
 namespace alu {
 namespace cv {
 
-Tensor Get2DGaussianKernel(const int& kernel_size, double deviation) {
+Tensor Get2DGaussianKernel(const int &kernel_size, double deviation) {
   Tensor kernel_tensor(kernel_size, kernel_size, alu::AluType::ADOUBLE);
-  double* data_ptr = static_cast<double*>(kernel_tensor.data());
+  double *data_ptr = static_cast<double *>(kernel_tensor.data());
   int range = kernel_size / 2;
   int cc = kernel_size % 2 == 0 ? 0 : 1;
   for (int x = -range; x < range + cc; x++) {
@@ -19,8 +19,5 @@ Tensor Get2DGaussianKernel(const int& kernel_size, double deviation) {
   return kernel_tensor;
 }
 
-
-}  // namespace cv
-}  // namespace alu
-
-
+} // namespace cv
+} // namespace alu
