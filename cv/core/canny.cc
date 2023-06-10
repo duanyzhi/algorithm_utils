@@ -22,22 +22,21 @@ void Canny::finding_gradients(const Tensor &input) {
   for (int i = 0; i < KGY.info().numel; i++) {
     KGY.set(i, Scalar(sobelgy[i]));
   }
-  std::cout << "KGXANDGY " << KGX << " " << KGY << "\n";
+  // std::cout << "KGXANDGY " << KGX << " " << KGY << "\n";
   auto GX = alu::Convolution2D(input, KGX);
   auto GY = alu::Convolution2D(input, KGY);
-  std::cout << "GX " << GX << "\n";
-  std::cout << "GY " << GY << "\n";
+  // std::cout << "GX " << GX << "\n";
+  // std::cout << "GY " << GY << "\n";
   // compute gradient magnitude with euclidean distance
   magnitude_ = alu::sqrt(GX.mul(GX) + GY.mul(GY));
   auto radian = arctan(GY.abs(), GX.abs());
   theta_ = radian * 180 / ALU_PI;
-  std::cout << "magnitude " << magnitude_.empty() << "\n";
-  std::cout << "theta " << theta_ << "\n";
 }
 
 void Canny::nms() {
-  for (int y = 1; y < magnitude_.info().height - 1; y++) {
-    for (int x = 1; x < magnitude_.info().width - 1; x++) {
+  // common pixel from 0 to height - 1
+  for (int y = 1; y < magnitude_.info().height - 2; y++) {
+    for (int x = 1; x < magnitude_.info().width - 2; x++) {
       // get 8-connected neighbourhood
       alu::rect roi(x, y, 3, 3);
       auto mag_neighbor = magnitude_(roi);
@@ -65,7 +64,7 @@ Tensor Canny::detection(const Tensor &input) {
   auto smooth_tensor = smooth(input);
   finding_gradients(smooth_tensor);
   nms();
-  return Magnitude();
+  return magnitude_;
 }
 
 Tensor CannyEdgeDetection(const Tensor &input) {

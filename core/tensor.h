@@ -4,6 +4,7 @@
 #include <cassert>
 #include <iostream>
 #include <stdlib.h>
+#include <string.h>
 #include <type_traits>
 
 #include "interface/common.h"
@@ -246,9 +247,17 @@ public:
   TensorImpl(TensorBuffer *buffer, int width, int height, AluType type,
              size_t size_bytes);
 
+  // explicitly delete copy/move semantics in an inheritance hierarchy to
+  // drastically reduce the probability for accidental object slicing
+  TensorImpl &operator=(const TensorImpl &other) = delete;
+  TensorImpl &operator=(TensorImpl &&other) = delete;
+  TensorImpl(const TensorImpl &other) = delete;
+  TensorImpl(TensorImpl &&other) = delete;
+
   ~TensorImpl();
   virtual void fill(const Scalar &value) = 0;
 
+  virtual void clone(const TensorImpl &other) = 0;
   virtual void set(const int &index, const Scalar &value) noexcept = 0;
   virtual void add(const void *other, const void *output) = 0;
   virtual void mul(const void *other, const void *output) = 0;
@@ -266,7 +275,7 @@ public:
 
   virtual Scalar data(int index) = 0;
 
-private:
+public:
   TensorInfo info_;
   TensorBuffer *buffer_;
 };
@@ -281,7 +290,13 @@ public:
       : TensorImpl(new DataStorage<scalar_type>(width * height), width, height,
                    _AluTp, traits::bytes) {}
 
+  TensorBase &operator=(const TensorBase &other) = delete;
+  TensorBase &operator=(TensorBase &&other) = delete;
+  TensorBase(const TensorBase &other) = delete;
+  TensorBase(TensorBase &&other) = delete;
+
   ~TensorBase(){};
+  void clone(const TensorImpl &other) override;
   void fill(const Scalar &value) override;
   void set(const int &index, const Scalar &value) noexcept override;
   void add(const void *other, const void *output) override;
@@ -293,6 +308,42 @@ public:
   Scalar data(int index) override;
 };
 
+template <AluType _AluType>
+void TensorBase<_AluType>::clone(const TensorImpl &other) {
+  std::cout << "clone from other " << other.data_ptr() << " to " << this
+            << "\n";
+  if (nullptr == buffer_)
+    buffer_ = new DataStorage<scalar_type>(other.info().numel);
+  assert(other.info().type == _AluType);
+  memcpy(buffer_->data(), other.data_ptr(),
+         other.info().numel * other.info().size_bytes);
+  info_ = other.info();
+};
+
+// template <AluType _AluType>
+// inline TensorBase<_AluType> &
+// TensorBase<_AluType>::operator=(const TensorBase &other) {
+//   if (buffer_)
+//     delete buffer_;
+//   buffer_ = new DataStorage<scalar_type>(other.info().numel);
+//   info_ = other.info();
+//   std::cout << "copy assignment for new impl " << this
+//             << " buffer: " << buffer_;
+//   return *this;
+// }
+
+// template <AluType _AluType>
+// inline TensorBase<_AluType> &
+// TensorBase<_AluType>::operator=(TensorBase &&other) {
+//   std::cout << "call tensor base move assignment for other impl " <<
+//   other.impl_
+//             << "\n";
+//   if (buffer_)
+//     delete buffer_;
+//   buffer_ = std::move(other.buffer_);
+//   info_ = other.info();
+// }
+//
 template <AluType _AluType>
 void TensorBase<_AluType>::fill(const Scalar &value) {
   pointer buffer = static_cast<pointer>(data_ptr());
@@ -308,8 +359,8 @@ void TensorBase<_AluType>::roi(const alu::rect &roi, const void *output) {
   pointer buffer = static_cast<pointer>(data_ptr());
   pointer output_buffer = static_cast<pointer>((void *)output);
   int number = 0;
-  for (auto y = 0; y < roi.h; ++y) {
-    for (auto x = 0; x < roi.w; ++x) {
+  for (auto y = roi.y; y < roi.y + roi.h; ++y) {
+    for (auto x = roi.x; x < roi.x + roi.w; ++x) {
       auto index = y * info().width + x;
       *(output_buffer + number) = static_cast<scalar_type>(*(buffer + index));
       ++number;
@@ -388,7 +439,18 @@ public:
   Tensor(const int &width, const int &height)
       : Tensor(width, height, AluType::ADOUBLE){};
   ~Tensor();
-  Tensor &operator=(const Tensor &rhs);
+  // copy assignment construct
+  Tensor &operator=(const Tensor &other) = delete;
+
+  // move assignment
+  Tensor &operator=(Tensor &&other);
+
+  // copy construct, when return call this
+  Tensor(const Tensor &other);
+
+  // move construct, auto tensor = ... call move construct
+  Tensor(Tensor &&other);
+
   // const TensorBuffer* GetTensorBuffer() const;
   const TensorInfo info() const;
   const Tensor &fill(const Scalar &value) const;
@@ -408,14 +470,41 @@ public:
 
   AluType dtype() const { return info().type; }
   bool empty() const { return nullptr == impl_; }
-  TensorImpl *impl() const { return impl_; }
 
-private:
-  Tensor(TensorImpl *impl) : impl_(impl) {}
-
-private:
+public:
   TensorImpl *impl_ = nullptr;
 };
+
+// copy construct, call when
+// 1. return tensor
+inline Tensor::Tensor(const Tensor &other) : Tensor(other.info()) {
+  std::cout << "copy construct raw " << impl_ << "\n";
+  impl_->clone(*other.impl_);
+  std::cout << "debug for copy construct impl " << impl_ << "\n";
+}
+
+// move construct
+inline Tensor::Tensor(Tensor &&other) {
+  impl_ = other.impl_;
+  other.impl_ = nullptr;
+}
+
+// copy assignment
+// inline Tensor &Tensor::operator=(const Tensor &other) {
+//   if (&other != this) {
+//     impl_ = other.impl_;
+//     std::cout << "copy assignment" << impl_ << "\n";
+//     std::cout << impl_->info().width << " " << impl_->data_ptr() << "\n";
+//   }
+//   return *this;
+// }
+
+// move assignment
+inline Tensor &Tensor::operator=(Tensor &&other) {
+  impl_ = other.impl_;
+  other.impl_ = nullptr; // set other to nullptr for not destroy impl
+  return *this;
+}
 
 std::ostream &operator<<(std::ostream &os, const Tensor &t);
 

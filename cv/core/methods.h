@@ -23,7 +23,6 @@ public:
   void finding_gradients(const Tensor &input);
   Tensor detection(const Tensor &input);
   void nms();
-  const Tensor Magnitude() const { return magnitude_; }
 
 private:
   Tensor magnitude_, theta_;
