@@ -126,6 +126,9 @@ Tensor Tensor::operator*(const double value) const {
 
 Tensor Tensor::operator()(const alu::rect &roi) const {
   Tensor output(roi.w, roi.h, this->dtype());
+  assert(roi.x >= 0 && roi.y >= 0 && roi.w >= 0 && roi.h >= 0);
+  assert(roi.x + roi.w <= info().width);
+  assert(roi.y + roi.h <= info().height);
   impl_->roi(roi, output.data());
   return output;
 }

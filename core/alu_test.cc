@@ -39,10 +39,11 @@ void test_alu() {
     std::cout << output;
   }
   {
-    auto input = alu::load("/workspace/algorithm_utils/data/im.png");
+    auto input = alu::load("/workspace/workspace/algorithm_utils/data/im.png");
     std::cout << "input: " << input;
     auto output = alu::cv::CannyEdgeDetection(input);
-    alu::save_image(output, "/workspace/algorithm_utils/data/output.png");
+    alu::save_image(output,
+                    "/workspace/workspace/algorithm_utils/data/output.png");
   }
 }
 
