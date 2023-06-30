@@ -200,6 +200,13 @@ static inline bool operator>=(const Scalar &lhs, const Scalar &rhs) {
   return false;
 }
 
+static inline bool operator!(const Scalar &data) {
+  if (data.type() == AluType::ABOOL) {
+    return !data.to<bool>();
+  }
+  return !(data > Scalar(0.0));
+}
+
 static inline bool operator<(const Scalar &lhs, const Scalar &rhs) {
   assert(lhs.type() != AluType::ABOOL && rhs.type() != AluType::ABOOL);
   if (lhs.type() == AluType::ALINT) {

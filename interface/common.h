@@ -7,6 +7,13 @@
 
 namespace alu {
 
+/***
+ * x,y --------
+ *  |          |
+ *  |          |
+ *  |          |
+ *  ----------x+w,y+h
+ ***/
 struct ALU_API rect {
   rect() {}
   rect(const int xx, const int yy, const int ww, const int hh)
