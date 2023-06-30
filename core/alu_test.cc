@@ -39,11 +39,17 @@ void test_alu() {
     std::cout << output;
   }
   {
-    auto input = alu::load("/workspace/workspace/algorithm_utils/data/im.png");
+    auto input = alu::load("/workspace/algorithm_utils/data/im.png");
     std::cout << "input: " << input;
     auto output = alu::cv::CannyEdgeDetection(input);
+    alu::save_image(output, "/workspace/algorithm_utils/data/output.png");
+  }
+  {
+    auto input = alu::load("/workspace/algorithm_utils/data/im.png");
+    auto output = alu::cv::threshold(input, 150);
     alu::save_image(output,
-                    "/workspace/workspace/algorithm_utils/data/output.png");
+                    "/workspace/algorithm_utils/data/threshold_output.png");
+    auto r = alu::cv::Tensor2Region(output);
   }
 }
 

@@ -60,10 +60,13 @@ void Canny::nms() {
   }
 }
 
+void Canny::double_threshold() { std::cout << magnitude_; }
+
 Tensor Canny::detection(const Tensor &input) {
   auto smooth_tensor = smooth(input);
   finding_gradients(smooth_tensor);
   nms();
+  double_threshold();
   return magnitude_;
 }
 
